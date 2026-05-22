@@ -1,32 +1,35 @@
 import { supabase } from './supabase'
 
-export async function signInWithEmail(email: string, password: string) {
-  return supabase.auth.signInWithPassword({
+export const signInWithEmail = async (email: string, password: string) => {
+  const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
   })
+  if (error) throw error
+  return data
 }
 
-export async function signUpWithEmail(email: string, password: string) {
-  return supabase.auth.signUp({
+export const signUpWithEmail = async (email: string, password: string) => {
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
   })
+  if (error) throw error
+  return data
 }
 
-export async function signOut() {
-  return supabase.auth.signOut()
+export const signOut = async () => {
+  const { error } = await supabase.auth.signOut()
+  if (error) throw error
 }
 
-export async function getCurrentUser() {
-  const { data } = await supabase.auth.getUser()
-  return data.user
+export const getCurrentUser = async () => {
+  const { data: { user }, error } = await supabase.auth.getUser()
+  if (error) throw error
+  return user
 }
 
-export async function getUserProfile(userId: string) {
-  return supabase.from('users').select('*').eq('id', userId).single()
-}
-
-export async function updateUserRole(userId: string, role: string) {
-  return supabase.from('users').update({ app_role: role }).eq('id', userId)
+export const resetPassword = async (email: string) => {
+  const { error } = await supabase.auth.resetPasswordForEmail(email)
+  if (error) throw error
 }

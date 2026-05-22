@@ -1,164 +1,172 @@
-import React, { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { LogOut, Menu, X, User } from 'lucide-react'
-import { supabase } from '../lib/supabase'
+import { Menu, X, LogOut, Settings, Home } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
 import toast from 'react-hot-toast'
 
-const Navbar: React.FC = () => {
+export default function Navbar() {
   const navigate = useNavigate()
-  const { user } = useAuthStore()
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [dropdownOpen, setDropdownOpen] = useState(false)
+  const { user, userRole, signOut } = useAuthStore()
+  const [isOpen, setIsOpen] = useState(false)
+  const [showDropdown, setShowDropdown] = useState(false)
 
-  const handleSignIn = async () => {
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/select-role`,
-        },
-      })
-      if (error) throw error
-    } catch (error) {
-      toast.error('Sign in failed')
-    }
+  const handleSignIn = () => {
+    navigate('/')
+    setIsOpen(false)
   }
 
   const handleSignOut = async () => {
     try {
-      const { error } = await supabase.auth.signOut()
-      if (error) throw error
+      await signOut()
+      setShowDropdown(false)
+      toast.success('Signed out successfully')
       navigate('/')
-      toast.success('Signed out')
     } catch (error) {
-      toast.error('Sign out failed')
+      toast.error('Failed to sign out')
     }
   }
 
+  const handleNavigate = (path: string) => {
+    navigate(path)
+    setShowDropdown(false)
+    setIsOpen(false)
+  }
+
   return (
-    <nav className="bg-navy-dark border-b border-gold">
+    <nav className="bg-navy text-white shadow-lg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* Logo */}
           <div className="flex items-center cursor-pointer" onClick={() => navigate('/')}>
-            <h1 className="text-2xl font-bold text-gold">NGPropertyHub</h1>
+            <div className="text-2xl font-bold text-gold">NGPropertyHub</div>
           </div>
 
-          {/* Desktop Menu */}
-          <div className="hidden md:flex items-center gap-6">
-            {!user ? (
-              <button
-                onClick={handleSignIn}
-                className="bg-gold text-navy px-6 py-2 rounded-lg font-semibold hover:bg-opacity-90"
-              >
-                Sign In
-              </button>
-            ) : (
+          {/* Desktop menu */}
+          <div className="hidden md:flex items-center space-x-8">
+            <button onClick={() => navigate('/')} className="hover:text-gold transition">
+              Home
+            </button>
+            <button onClick={() => navigate('/properties')} className="hover:text-gold transition">
+              Properties
+            </button>
+            <button onClick={() => navigate('/fractional')} className="hover:text-gold transition">
+              Invest
+            </button>
+            <button onClick={() => navigate('/ngestimate')} className="hover:text-gold transition">
+              Estimate
+            </button>
+
+            {user ? (
               <div className="relative">
                 <button
-                  onClick={() => setDropdownOpen(!dropdownOpen)}
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gold text-navy font-semibold hover:bg-opacity-90"
+                  onClick={() => setShowDropdown(!showDropdown)}
+                  className="flex items-center space-x-2 px-4 py-2 bg-gold text-navy rounded-lg hover:bg-opacity-90 transition"
                 >
-                  <User className="w-4 h-4" />
-                  Menu
+                  <div className="w-6 h-6 rounded-full bg-navy flex items-center justify-center text-xs font-bold">
+                    {user.email?.[0].toUpperCase()}
+                  </div>
+                  <span className="font-semibold">{userRole?.toUpperCase()}</span>
                 </button>
 
-                {dropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg">
+                {showDropdown && (
+                  <div className="absolute right-0 mt-2 w-48 bg-navy border border-gold rounded-lg shadow-lg z-50">
                     <button
-                      onClick={() => {
-                        navigate('/buyer-dashboard')
-                        setDropdownOpen(false)
-                      }}
-                      className="block w-full text-left px-4 py-2 text-navy hover:bg-gold hover:bg-opacity-20"
+                      onClick={() => handleNavigate('/buyer-dashboard')}
+                      className="w-full text-left px-4 py-2 hover:bg-navy-dark flex items-center space-x-2 transition"
                     >
-                      Dashboard
+                      <Home size={18} />
+                      <span>Dashboard</span>
                     </button>
                     <button
-                      onClick={() => {
-                        navigate('/settings')
-                        setDropdownOpen(false)
-                      }}
-                      className="block w-full text-left px-4 py-2 text-navy hover:bg-gold hover:bg-opacity-20"
+                      onClick={() => handleNavigate('/settings')}
+                      className="w-full text-left px-4 py-2 hover:bg-navy-dark flex items-center space-x-2 transition"
                     >
-                      Settings
+                      <Settings size={18} />
+                      <span>Settings</span>
                     </button>
+                    <hr className="border-gold" />
                     <button
-                      onClick={() => {
-                        handleSignOut()
-                        setDropdownOpen(false)
-                      }}
-                      className="block w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 border-t border-gold"
+                      onClick={handleSignOut}
+                      className="w-full text-left px-4 py-2 hover:bg-red-900 flex items-center space-x-2 transition text-red-400"
                     >
-                      Sign Out
+                      <LogOut size={18} />
+                      <span>Sign Out</span>
                     </button>
                   </div>
                 )}
               </div>
-            )}
-          </div>
-
-          {/* Mobile Menu Button */}
-          <div className="md:hidden">
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="text-gold hover:text-white"
-            >
-              {mobileMenuOpen ? <X /> : <Menu />}
-            </button>
-          </div>
-        </div>
-
-        {/* Mobile Menu */}
-        {mobileMenuOpen && (
-          <div className="md:hidden pb-4 border-t border-gold">
-            {!user ? (
+            ) : (
               <button
-                onClick={() => {
-                  handleSignIn()
-                  setMobileMenuOpen(false)
-                }}
-                className="w-full bg-gold text-navy px-6 py-2 rounded-lg font-semibold hover:bg-opacity-90 mt-4"
+                onClick={handleSignIn}
+                className="px-6 py-2 bg-gold text-navy font-semibold rounded-lg hover:bg-opacity-90 transition"
               >
                 Sign In
               </button>
-            ) : (
-              <div className="space-y-2 mt-4">
+            )}
+          </div>
+
+          {/* Mobile menu button */}
+          <div className="md:hidden">
+            <button onClick={() => setIsOpen(!isOpen)} className="text-white">
+              {isOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile menu */}
+      {isOpen && (
+        <div className="md:hidden bg-navy-dark">
+          <div className="space-y-2 px-4 py-4">
+            <button
+              onClick={() => handleNavigate('/')}
+              className="block w-full text-left py-2 hover:text-gold"
+            >
+              Home
+            </button>
+            <button
+              onClick={() => handleNavigate('/properties')}
+              className="block w-full text-left py-2 hover:text-gold"
+            >
+              Properties
+            </button>
+            <button
+              onClick={() => handleNavigate('/fractional')}
+              className="block w-full text-left py-2 hover:text-gold"
+            >
+              Invest
+            </button>
+            {user ? (
+              <>
                 <button
-                  onClick={() => {
-                    navigate('/buyer-dashboard')
-                    setMobileMenuOpen(false)
-                  }}
-                  className="block w-full text-left px-4 py-2 text-gold hover:bg-navy"
+                  onClick={() => handleNavigate('/buyer-dashboard')}
+                  className="block w-full text-left py-2 hover:text-gold"
                 >
                   Dashboard
                 </button>
                 <button
-                  onClick={() => {
-                    navigate('/settings')
-                    setMobileMenuOpen(false)
-                  }}
-                  className="block w-full text-left px-4 py-2 text-gold hover:bg-navy"
+                  onClick={() => handleNavigate('/settings')}
+                  className="block w-full text-left py-2 hover:text-gold"
                 >
                   Settings
                 </button>
                 <button
-                  onClick={() => {
-                    handleSignOut()
-                    setMobileMenuOpen(false)
-                  }}
-                  className="block w-full text-left px-4 py-2 text-red-400 hover:bg-navy"
+                  onClick={handleSignOut}
+                  className="block w-full text-left py-2 text-red-400 hover:text-red-300"
                 >
                   Sign Out
                 </button>
-              </div>
+              </>
+            ) : (
+              <button
+                onClick={handleSignIn}
+                className="block w-full text-left py-2 text-gold font-semibold"
+              >
+                Sign In
+              </button>
             )}
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </nav>
   )
 }
-
-export default Navbar
